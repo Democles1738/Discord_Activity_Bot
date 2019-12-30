@@ -24,12 +24,12 @@ class MyClient(discord.Client):
             # this is fragile and is now assuming argument 1 is month and argument 2 is day
 
             # check if we are set up to talk with this server or not
-            channel = check_server_id(message)
-            # if server_id is 0:     # if it's 0, it has not been setup and we reply in the channel that we were invoked in
-            #     print("changing id to: ", message.channel.id)
-            #     channel = client.get_channel(message.channel.id)
-            # else:
-            #     channel = client.get_channel(server_id)
+            # channel = check_server_id(message)
+            if server_id is 0:     # if it's 0, it has not been setup and we reply in the channel that we were invoked in
+                print("changing id to: ", message.channel.id)
+                channel = client.get_channel(message.channel.id)
+            else:
+                channel = client.get_channel(server_id)
             try:
                 month = int(parsed_msg[1])
                 if month < 1 or month > 12:
@@ -51,9 +51,13 @@ class MyClient(discord.Client):
             tempList = self.users
             active_list = []
             inactive_list = []
+            counter = 0
             for user in tempList:
+                counter += 1
                 print(user.name)
                 inactive_list.append(user.name)
+                #inactive_list.append(user.id)
+            print("Total users read: ", counter)
             # everybody is assumed to be inactive, when a message is found from that user, they will be moved to active
             print('Reading messages...')
             text_channel_list = []
@@ -65,17 +69,23 @@ class MyClient(discord.Client):
                         # https://stackoverflow.com/questions/7065164/how-to-make-an-unaware-datetime-timezone-aware-in-python
                         print("On channel: ", text_channel)
                         try:
-                            async for msg in text_channel.history(limit=200, before=None,
+                            async for msg in text_channel.history(limit=None, before=None,
                                                              after=datetime(2019, month, day, 0, 0, 0,
                                                                             0)):  # , tzinfo=datetime.now(pytz.utc)), around=None, oldest_first=None): this would make it aware and not naive
-                                if msg.author.display_name in inactive_list:
-                                    print("Moving: ", msg.author.display_name, " to the active list")
-                                    active_list.append(msg.author.display_name)
+                                if msg.author.name in inactive_list and msg.content is not "":
+                                    print(msg.content)
+                                    print(msg.created_at)
+                                    print("Moving: ", msg.author.name, " to the active list")
+                                    active_list.append(msg.author.name)
                                     # now remove that person from the inactive list
-                                    inactive_list.remove(msg.author.display_name)
+                                    inactive_list.remove(msg.author.name)
                                     # await message.author.send("Done!")
+                        except discord.errors.Forbidden:
+                            print("Unable to read this channel: ", text_channel)
                         except:
-                            await channel.send("Stop it with the bad dates :(")
+                            await channel.send("Stop it with the bad dates :( ")
+                            await channel.send(month)
+                            await channel.send(day)
                             # print(msg.content)
                             # print(msg.author.display_name)
                             return
@@ -120,10 +130,12 @@ def check_server_id(message):
     if server_id is 0:     # the channel_id is not set up at all
         server_id = message.channel.id  # this is the current server that we're talking to
         channel = client.get_channel(server_id)     # this is the current channel in that server that we will send messages to
+        return channel
     elif server_id is not message.channel.id:      # our current set up is for another server, change it
         server_id = message.channel.id
         channel = client.get_channel(server_id)
-    return channel
+        return channel
+
 
 
 client = MyClient()
