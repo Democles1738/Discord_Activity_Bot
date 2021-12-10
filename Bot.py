@@ -140,4 +140,4 @@ def check_server_id(message):
 
 client = MyClient()
 random.seed()
-client.run('')   # <== place token here
+client.run('OTE4MTQ5MDA3MzU4OTUxNDc2.YbDC5Q.BXKa_dgafUE6WwGzml053i05ql8')   # <== place token here
